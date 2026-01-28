@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agede AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #2d0c0c;
+      --card: #4a1c1c;
+      --accent: #ff5e5e;
+      --accent2: #ff914d;
+      --white: #f5f5f5;
+      --gray: #bbbbbb;
+    }
+
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #661818 #1b0606;
+    }
+
+    /* Scrollbar custom (Webkit) */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #1b0606;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #661818;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #ff5e5e;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-dark);
+      font-family: 'Inter', sans-serif;
+      color: var(--white);
+      overflow: hidden;
+    }
+
+    .main-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 80px;
+      background-color: #1b0606;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+    }
+
+    .sidebar img {
+      width: 30px;
+      margin: 20px 0;
+      cursor: pointer;
+    }
+
+    .chat-container {
+      flex: 1;
+      background-color: var(--bg-dark);
+      padding: 2rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 2rem;
+    }
+
+    #chat-box {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding-right: 1rem;
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 1rem;
+      border-radius: 1.5rem;
+      font-size: 1rem;
+      word-wrap: break-word;
+      background-color: var(--card);
+      color: var(--white);
+    }
+
+    .user-message {
+      align-self: flex-end;
+      background-color: var(--accent2);
+      color: #000;
+    }
+
+    .ia-message {
+      align-self: flex-start;
+      background-color: var(--card);
+    }
+
+    .input-area {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 1rem;
+      border-radius: 2rem;
+      border: none;
+      outline: none;
+      background-color: var(--card);
+      color: var(--white);
+    }
+
+    .input-area button {
+      padding: 1rem 2rem;
+      border-radius: 2rem;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .input-area button:hover {
+      background: #ff3e3e;
+    }
+
+    .pensando img {
+      width: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+      .main-container {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="sidebar">
+      <img src="https://cdn-icons-png.flaticon.com/512/25/25694.png" alt="Home" />
+      <img src="https://cdn-icons-png.flaticon.com/512/565/565547.png" alt="Chat" />
+      <img src="https://cdn-icons-png.flaticon.com/512/1828/1828490.png" alt="Config" />
+    </div>
+
+    <div class="chat-container">
+      <div class="chat-header">Agede 🤖</div>
+      <div id="chat-box"></div>
+      <div class="input-area">
+        <input type="text" id="userInput" placeholder="Pergunte sobre dengue..." />
+        <button id="sendButton">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+
+    function adicionarMensagem(tipo, conteudoHTML) {
+      const div = document.createElement('div');
+      div.classList.add('message', tipo === 'user' ? 'user-message' : 'ia-message');
+      div.innerHTML = conteudoHTML;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function adicionarPensando() {
+      const div = document.createElement('div');
+      div.classList.add('message', 'ia-message', 'pensando');
+      div.innerHTML = '<img src="https://www.blogson.com.br/wp-content/uploads/2017/10/584b607f5c2ff075429dc0e7b8d142ef.gif" alt="Pensando...">';
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return div;
+    }
+
+    function enviarMensagem() {
+      const texto = userInput.value.trim();
+      if (!texto) return;
+      adicionarMensagem('user', texto);
+      userInput.value = '';
+      const pensandoDiv = adicionarPensando();
+      $.post('/send', { userInput: texto }, function(data) {
+        pensandoDiv.classList.remove('pensando');
+        pensandoDiv.innerHTML = data.response;
+        if (data.response === 'Saindo do programa...') {
+          userInput.disabled = true;
+          sendButton.disabled = true;
+        }
+      });
+    }
+
+    sendButton.addEventListener('click', enviarMensagem);
+    userInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') enviarMensagem();
+    });
+  </script>
+</body>
+</html>
